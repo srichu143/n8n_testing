@@ -1,1 +1,124 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Analyzer (n8n + LLM)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 2rem;
+      width: 100%;
+      max-width: 600px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      resize: none;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #0078ff;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      background: #f1f5f9;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 1rem;
+      white-space: pre-wrap;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🧠 n8n + LLM Text Analyzer</h2>
+    <p>Enter a paragraph and choose to summarize or analyze sentiment.</p>
+
+    <textarea id="textInput" placeholder="Type or paste a paragraph here..."></textarea>
+
+    <div>
+      <label>
+        <input type="radio" name="mode" value="summary" checked> Summary
+      </label>
+      <label style="margin-left: 10px;">
+        <input type="radio" name="mode" value="sentiment"> Sentiment
+      </label>
+    </div>
+
+    <button class="btn" id="analyzeBtn">Analyze</button>
+
+    <div id="error" class="error"></div>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    const webhookUrl = "https://geeta1.app.n8n.cloud/webhook-test/64605b0d-3c29-479a-b716-2f8802fbb31d";
+ // replace with your active webhook
+
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const textInput = document.getElementById("textInput");
+    const resultDiv = document.getElementById("result");
+    const errorDiv = document.getElementById("error");
+
+    analyzeBtn.addEventListener("click", async () => {
+      const text = textInput.value.trim();
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+
+      if (!text) {
+        errorDiv.textContent = "⚠️ Please enter some text.";
+        return;
+      }
+
+      errorDiv.textContent = "";
+      resultDiv.textContent = "⏳ Processing... please wait.";
+      analyzeBtn.disabled = true;
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, mode }),
+        });
+
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const data = await response.json();
+
+        resultDiv.textContent = data.output || JSON.stringify(data, null, 2);
+      } catch (err) {
+        errorDiv.textContent = "❌ " + err.message;
+        resultDiv.textContent = "";
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
